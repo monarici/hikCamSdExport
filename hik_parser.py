@@ -4,6 +4,8 @@ import subprocess
 import tempfile
 from datetime import datetime, timedelta, timezone
 
+import shutil
+
 class HikParser:
     def __init__(self, card_path):
         self.card_path = card_path
@@ -12,6 +14,10 @@ class HikParser:
         self.segment_len = 80
         self.max_segments = 256
         self.mask = 0x00000000ffffffff
+
+        # Check for FFmpeg installation
+        if not shutil.which("ffmpeg"):
+            raise RuntimeError("Sisteminizde FFmpeg bulunamadı. Lütfen bilgisayarınıza FFmpeg kurup ortam değişkenlerine (PATH) ekleyin.")
 
         self.index_file = os.path.join(self.card_path, "index00.bin")
         if not os.path.exists(self.index_file):
