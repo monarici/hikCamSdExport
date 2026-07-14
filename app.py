@@ -2,6 +2,9 @@ import os
 import sys
 from flask import Flask, render_template, request, jsonify, send_file, send_from_directory
 from datetime import datetime
+from threading import Lock
+
+thumbnail_lock = Lock()
 
 # Add current folder to path
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -154,10 +157,12 @@ def api_thumbnail(segment_id):
         
         # Generate thumbnail if not already cached
         if not os.path.exists(thumb_path):
-            success = parser.extract_thumbnail(segment, thumb_path)
-            if not success:
-                return jsonify({'error': "Failed to extract thumbnail"}), 500
-                
+            with thumbnail_lock:
+                if not os.path.exists(thumb_path):
+                    success = parser.extract_thumbnail(segment, thumb_path)
+                    if not success:
+                        return jsonify({'error': "Failed to extract thumbnail"}), 500
+                        
         return send_from_directory(CACHE_DIR, thumb_filename)
     except Exception as e:
         return jsonify({'error': str(e)}), 500

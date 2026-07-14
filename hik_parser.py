@@ -114,7 +114,8 @@ class HikParser:
         # Read a 5MB chunk starting at start_offset (contains initialization headers and first keyframe)
         chunk_size = 5 * 1024 * 1024
         
-        cmd = f"ffmpeg -f mpeg -i - -vframes 1 -q:v 2 {output_path} -y -hide_banner"
+        nice_prefix = "nice -n 15 " if os.name != 'nt' else ""
+        cmd = f"{nice_prefix}ffmpeg -f mpeg -i - -threads 1 -vframes 1 -q:v 2 {output_path} -y -hide_banner"
         
         try:
             process = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
