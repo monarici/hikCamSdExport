@@ -30,7 +30,6 @@ const dom = {
     btnRanges: document.querySelectorAll('.btn-range'),
     btnBrowse: document.getElementById('btnBrowse'),
     browseModal: document.getElementById('browseModal'),
-    compressVideo: document.getElementById('compressVideo'),
     filePrefix: document.getElementById('filePrefix'),
     exportSuccessModal: document.getElementById('exportSuccessModal'),
     btnExitSuccess: document.getElementById('btnExitSuccess'),
@@ -451,7 +450,7 @@ async function exportRange() {
                 start_ts: reqStartTs,
                 end_ts: reqEndTs,
                 tz_offset: state.tzOffset,
-                compress: dom.compressVideo ? dom.compressVideo.checked : false,
+                compress: true,
                 file_prefix: dom.filePrefix ? dom.filePrefix.value.trim() : 'hik_export'
             })
         });

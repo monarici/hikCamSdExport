@@ -144,7 +144,7 @@ def api_export():
         return jsonify({'error': "Missing start_ts or end_ts"}), 400
         
     try:
-        compress = data.get('compress', False)
+        compress = data.get('compress', True)
         file_prefix = data.get('file_prefix', 'hik_export').strip()
         if not file_prefix:
             file_prefix = 'hik_export'
