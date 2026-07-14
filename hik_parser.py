@@ -154,7 +154,7 @@ class HikParser:
                 # Configure output format flags
                 fmt_flag = "-f mpeg" if format_type == "mpeg" else ""
                 cmd = f"ffmpeg -f mpeg -i - -threads auto -c:v copy -an {fmt_flag} {temp_mp4} -y -hide_banner"
-                process = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                process = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 
                 video_len = 65536
                 with open(seg['file_path'], "rb") as vin:
