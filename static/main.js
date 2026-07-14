@@ -1,7 +1,7 @@
 // State variables
 let state = {
     segments: [],
-    cardPath: '/media/technopc/0000-017B',
+    cardPath: '',
     tzOffset: 0,
     recentExports: []
 };
@@ -57,7 +57,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Auto-scan on load to show initial card state if valid
-    scanCard();
+    if (dom.cardPath.value.trim()) {
+        scanCard();
+    }
 });
 
 // Browse directory using backend OS folder selector
@@ -80,7 +82,7 @@ async function browseFolder() {
             showNotification('Bilgi', 'Klasör seçimi iptal edildi.', 'info');
         }
     } catch (error) {
-        showNotification('Hata', 'Gözat penceresi açılamadı. Lütfen yolu manuel yazın.', 'error');
+        showNotification('Hata', error.message, 'error');
         console.error(error);
     } finally {
         dom.btnBrowse.disabled = false;

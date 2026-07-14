@@ -42,7 +42,15 @@ def api_browse():
             else:
                 return jsonify({'path': None})
         else:
-            return jsonify({'error': res.stderr.strip() or "GUI Display error"}), 500
+            stderr = res.stderr.strip()
+            error_msg = "Klasör seçici penceresi açılamadı."
+            if "No module named '_tkinter'" in stderr or "ModuleNotFoundError" in stderr:
+                error_msg = "Sisteminizde Python GUI (Tkinter) modülü kurulu değil. Lütfen terminalde 'sudo apt install python3-tk' çalıştırıp sunucuyu yeniden başlatın."
+            elif "couldn't connect to display" in stderr or "DISPLAY" in stderr:
+                error_msg = "Grafik ekran (X11/Wayland DISPLAY) bağlantısı kurulamadı. SSH ortamında gözat çalışmaz, lütfen yolu manuel girin."
+            else:
+                error_msg += f" Detay: {stderr}"
+            return jsonify({'error': error_msg}), 500
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
