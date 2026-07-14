@@ -124,7 +124,7 @@ class HikParser:
         except Exception:
             return False
 
-    def export_range(self, start_ts, end_ts, output_path, tz_offset=3):
+    def export_range(self, start_ts, end_ts, output_path, tz_offset=3, format_type='mpeg'):
         """Extracts and merges video data for the given UTC unix timestamp range."""
         segments = self.get_segments(tz_offset)
         
@@ -151,7 +151,9 @@ class HikParser:
                 os.close(fd)
                 temp_files.append(temp_mp4)
                 
-                cmd = f"ffmpeg -f mpeg -i - -threads auto -c:v copy -an {temp_mp4} -y -hide_banner"
+                # Configure output format flags
+                fmt_flag = "-f mpeg" if format_type == "mpeg" else ""
+                cmd = f"ffmpeg -f mpeg -i - -threads auto -c:v copy -an {fmt_flag} {temp_mp4} -y -hide_banner"
                 process = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 
                 video_len = 65536
@@ -186,7 +188,8 @@ class HikParser:
                     for tf in temp_files:
                         f_concat.write(f"file '{tf}'\n")
                 
-                cmd_concat = f"ffmpeg -f concat -safe 0 -i {concat_list_path} -c copy {output_path} -y -hide_banner"
+                fmt_flag = "-f mpeg" if format_type == "mpeg" else ""
+                cmd_concat = f"ffmpeg -f concat -safe 0 -i {concat_list_path} -c copy {fmt_flag} {output_path} -y -hide_banner"
                 res = subprocess.run(cmd_concat, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 
                 os.remove(concat_list_path)

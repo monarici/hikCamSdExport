@@ -29,7 +29,8 @@ const dom = {
     segmentSearch: document.getElementById('segmentSearch'),
     btnRanges: document.querySelectorAll('.btn-range'),
     btnBrowse: document.getElementById('btnBrowse'),
-    browseModal: document.getElementById('browseModal')
+    browseModal: document.getElementById('browseModal'),
+    formatType: document.getElementById('formatType')
 };
 
 // Event Listeners
@@ -430,7 +431,8 @@ async function exportRange() {
                 card_path: state.cardPath,
                 start_ts: reqStartTs,
                 end_ts: reqEndTs,
-                tz_offset: state.tzOffset
+                tz_offset: state.tzOffset,
+                format_type: dom.formatType.value
             })
         });
         
