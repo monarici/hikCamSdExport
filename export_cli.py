@@ -57,7 +57,7 @@ def find_default_card_path():
         
     return ''
 
-def get_segments(card_path, index_file, tz_offset=3):
+def get_segments(card_path, index_file, tz_offset=0):
     header_len = 1280
     file_len = 32
     segment_len = 80
@@ -203,8 +203,21 @@ def main():
         
     print(f"{GREEN}[✓] Dizin doğrulandı: {card_path}{RESET}")
     
+    # Get timezone offset
+    print(f"\n{BOLD}Kamera Saat Farkı Ayarı{RESET}")
+    while True:
+        tz_str = input(f"{CYAN}Saat Farkı (Varsayılan: 0):{RESET} ").strip()
+        if not tz_str:
+            tz_offset = 0
+            break
+        try:
+            tz_offset = int(tz_str)
+            break
+        except ValueError:
+            print(f"{RED}[!] Geçersiz sayı. Lütfen tam sayı girin (Örn: 0 veya 3).{RESET}")
+            
     try:
-        segments = get_segments(card_path, index_file)
+        segments = get_segments(card_path, index_file, tz_offset)
         print(f"{GREEN}[i] Toplam {len(segments)} adet video segmenti başarıyla dizinlendi.{RESET}")
     except Exception as e:
         print(f"{RED}[!] Dizinleme hatası: {e}{RESET}")
