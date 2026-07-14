@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hikvision SD Kart Video Aktarıcı</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="dark-mode">
+    <div class="background-decor">
+        <div class="circle circle-1"></div>
+        <div class="circle circle-2"></div>
+    </div>
+    
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header glass">
+            <div class="logo">
+                <i class="fa-solid fa-camera-cctv logo-icon"></i>
+                <div class="logo-text">
+                    <h1>HikExporter</h1>
+                    <span>Hikvision SD Card Video Recovery Tool</span>
+                </div>
+            </div>
+            
+            <div class="header-settings">
+                <div class="input-group">
+                    <label for="cardPath"><i class="fa-solid fa-sd-card"></i> Kart Yolu</label>
+                    <div class="input-with-button">
+                        <input type="text" id="cardPath" value="/media/technopc/6A28-44CC" placeholder="Kartın takılı olduğu dizin">
+                        <button id="btnBrowse" class="btn secondary-btn" title="Klasör Seç"><i class="fa-solid fa-folder-open"></i> Gözat</button>
+                    </div>
+                </div>
+                <div class="input-group offset-group">
+                    <label for="tzOffset"><i class="fa-solid fa-clock"></i> Zaman Dilimi</label>
+                    <select id="tzOffset">
+                        <option value="0" selected>0 (Kamera Saat Dilimi - Tavsiye Edilen)</option>
+                        <option value="3">UTC +3 (Türkiye Saati)</option>
+                    </select>
+                </div>
+                <button id="btnScan" class="btn primary-btn"><i class="fa-solid fa-magnifying-glass-chart"></i> Tarat</button>
+            </div>
+        </header>
+
+        <!-- Timeline / Overview -->
+        <section class="timeline-section glass">
+            <div class="section-title">
+                <h2><i class="fa-solid fa-chart-gantt"></i> Kayıt Zaman Çizelgesi</h2>
+                <span id="timelineSpan">Kayıtların günlere göre dağılımı</span>
+            </div>
+            <div class="timeline-container">
+                <div id="timelineBars" class="timeline-bars">
+                    <!-- Dynamic timeline slots will load here -->
+                    <div class="timeline-placeholder">Verileri listelemek için "Tarat" butonuna basın.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Workspace -->
+        <main class="main-workspace">
+            <!-- Left Panel: Recording Segments -->
+            <section class="segments-panel glass">
+                <div class="panel-header">
+                    <h2><i class="fa-solid fa-list-video"></i> Kayıt Dilimleri (<span id="segmentsCount">0</span>)</h2>
+                    <div class="filter-search">
+                        <i class="fa-solid fa-filter"></i>
+                        <input type="text" id="segmentSearch" placeholder="Tarih aratın (örn: 2026-06-11)">
+                    </div>
+                </div>
+                <div id="segmentsList" class="segments-list">
+                    <div class="empty-state">
+                        <i class="fa-solid fa-folder-open"></i>
+                        <p>Kayıtlı veri bulunamadı veya henüz tarama yapılmadı.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel: Export Tool -->
+            <section class="export-panel glass">
+                <div class="panel-header">
+                    <h2><i class="fa-solid fa-download"></i> Görüntü Dışarı Aktarma</h2>
+                    <span>İstediğiniz tarih ve saati girin</span>
+                </div>
+                
+                <div class="export-form">
+                    <div class="form-row">
+                        <div class="input-group full-width">
+                            <label><i class="fa-solid fa-calendar-day"></i> Başlangıç Tarih & Saat</label>
+                            <input type="datetime-local" id="exportStart" step="1">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="input-group full-width">
+                            <label><i class="fa-solid fa-calendar-day"></i> Bitiş Tarih & Saat</label>
+                            <input type="datetime-local" id="exportEnd" step="1">
+                        </div>
+                    </div>
+
+                    <div class="quick-ranges">
+                        <span class="range-label">Hazır Aralıklar:</span>
+                        <button class="btn-range" data-duration="5">5 dk</button>
+                        <button class="btn-range" data-duration="15">15 dk</button>
+                        <button class="btn-range" data-duration="30">30 dk</button>
+                        <button class="btn-range" data-duration="60">1 saat</button>
+                    </div>
+
+                    <div class="overlap-info" id="overlapInfo">
+                        <i class="fa-solid fa-info-circle"></i> Seçtiğiniz aralıkta herhangi bir kayıt bulunmamaktadır.
+                    </div>
+                    
+                    <button id="btnExport" class="btn success-btn btn-large" disabled>
+                        <i class="fa-solid fa-file-export"></i> Videoyu Dışarı Aktar (MP4)
+                    </button>
+                </div>
+
+                <div class="recent-exports">
+                    <h3><i class="fa-solid fa-history"></i> Son Dışarı Aktarılanlar</h3>
+                    <div id="recentExportsList" class="recent-exports-list">
+                        <div class="no-exports">Henüz dışarı aktarılan dosya yok.</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Exporting Overlay Modal -->
+    <div id="exportModal" class="modal-overlay">
+        <div class="modal-content glass">
+            <div class="loader-spinner">
+                <i class="fa-solid fa-circle-notch fa-spin"></i>
+            </div>
+            <h3>Görüntü Dışarı Aktarılıyor...</h3>
+            <p>SD karttan veriler okunuyor ve video MP4 dosyasına mux ediliyor. Lütfen bekleyin.</p>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+            <span class="progress-status">İşlem yapılıyor...</span>
+        </div>
+    </div>
+
+    <!-- Video Player Preview Modal -->
+    <div id="previewModal" class="modal-overlay">
+        <div class="modal-content player-modal glass">
+            <div class="player-header">
+                <h3><i class="fa-solid fa-play"></i> Görüntü Önizleme</h3>
+                <button class="close-btn" id="btnExitPlayer"><i class="fa-solid fa-times"></i></button>
+            </div>
+            <div class="player-container">
+                <video id="previewVideo" controls></video>
+            </div>
+            <div class="player-footer">
+                <span id="playerFilename">dosya.mp4</span>
+                <a id="playerDownloadBtn" href="#" class="btn primary-btn"><i class="fa-solid fa-download"></i> Bilgisayara İndir</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Notification -->
+    <div id="notification" class="notification">
+        <i class="notification-icon fa-solid fa-circle-check"></i>
+        <div class="notification-content">
+            <span class="notification-title">Başarılı</span>
+            <span class="notification-msg">İşlem başarıyla tamamlandı.</span>
+        </div>
+    </div>
+
+    <!-- Frontend Script -->
+    <script src="/static/main.js"></script>
+</body>
+</html>
