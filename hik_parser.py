@@ -3,6 +3,7 @@ import struct
 import subprocess
 import tempfile
 from datetime import datetime, timedelta, timezone
+from concurrent.futures import ThreadPoolExecutor
 
 import shutil
 
@@ -131,7 +132,7 @@ class HikParser:
             return False
 
     def export_range(self, start_ts, end_ts, output_dir, file_prefix="hik_export", tz_offset=3, compress=False):
-        """Extracts video segments for the given time range and saves them individually."""
+        """Extracts video segments for the given time range and saves them individually in parallel."""
         segments = self.get_segments(tz_offset)
         
         # Find indices of segments that overlap
@@ -148,9 +149,8 @@ class HikParser:
         end_idx = min(len(segments) - 1, max_idx + 1)
         
         selected_segments = segments[start_idx : end_idx + 1]
-        exported_files = []
         
-        for seg in selected_segments:
+        def export_single_segment(seg):
             dt = datetime.fromtimestamp(seg['start_ts'])
             filename = f"{file_prefix}_{dt.strftime('%Y%m%d_%H%M%S')}.mp4"
             output_path = os.path.join(output_dir, filename)
@@ -163,7 +163,8 @@ class HikParser:
                 
             process = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             
-            video_len = 65536
+            # Fast 4MB buffer size
+            video_len = 4 * 1024 * 1024
             with open(seg['file_path'], "rb") as vin:
                 vin.seek(seg['start_offset'])
                 bytes_to_read = seg['size_bytes']
@@ -183,6 +184,11 @@ class HikParser:
             if process.returncode != 0 or not os.path.exists(output_path) or os.path.getsize(output_path) < 1000:
                 raise RuntimeError(f"Failed to demux segment {seg['id']}")
                 
-            exported_files.append(filename)
+            return filename
+
+        # Run up to 4 exports in parallel
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            futures = [executor.submit(export_single_segment, seg) for seg in selected_segments]
+            exported_files = [f.result() for f in futures]
             
         return exported_files

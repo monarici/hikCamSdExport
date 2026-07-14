@@ -31,16 +31,46 @@ def get_parser(card_path):
 def index():
     return render_template('index.html')
 
+def find_default_card_path():
+    media_dirs = ['/media', '/run/media', os.path.expanduser('~')]
+    try:
+        import getpass
+        user = getpass.getuser()
+        media_dirs.insert(0, f'/media/{user}')
+        media_dirs.insert(1, f'/run/media/{user}')
+    except Exception:
+        pass
+
+    for md in media_dirs:
+        if os.path.exists(md) and os.path.isdir(md):
+            try:
+                for sub in os.listdir(md):
+                    sub_path = os.path.join(md, sub)
+                    if os.path.isdir(sub_path) and os.path.exists(os.path.join(sub_path, 'index00.bin')):
+                        return sub_path
+            except Exception:
+                pass
+    return ''
+
 @app.route('/api/list_dir', methods=['GET'])
 def api_list_dir():
     path = request.args.get('path', '')
     
     if not path:
-        # Default starting directory on Linux
-        for p in ['/media/technopc', '/media', os.path.expanduser('~'), '/']:
-            if os.path.exists(p) and os.path.isdir(p):
-                path = p
-                break
+        path = find_default_card_path()
+        if not path:
+            media_paths = ['/media', '/run/media', os.path.expanduser('~'), '/']
+            try:
+                import getpass
+                user = getpass.getuser()
+                media_paths.insert(0, f'/media/{user}')
+                media_paths.insert(1, f'/run/media/{user}')
+            except Exception:
+                pass
+            for p in media_paths:
+                if os.path.exists(p) and os.path.isdir(p):
+                    path = p
+                    break
                 
     try:
         path = os.path.abspath(path)
@@ -77,7 +107,7 @@ def api_list_dir():
 
 @app.route('/api/scan', methods=['GET'])
 def api_scan():
-    card_path = request.args.get('card_path', '/media/technopc/0000-017B')
+    card_path = request.args.get('card_path') or find_default_card_path()
     tz_offset = int(request.args.get('tz_offset', 0))
     
     if not os.path.exists(card_path):
@@ -108,7 +138,7 @@ def api_scan():
 
 @app.route('/api/thumbnail/<int:segment_id>', methods=['GET'])
 def api_thumbnail(segment_id):
-    card_path = request.args.get('card_path', '/media/technopc/0000-017B')
+    card_path = request.args.get('card_path') or find_default_card_path()
     
     try:
         parser = get_parser(card_path)
@@ -135,7 +165,7 @@ def api_thumbnail(segment_id):
 @app.route('/api/export', methods=['POST'])
 def api_export():
     data = request.json or {}
-    card_path = data.get('card_path', '/media/technopc/0000-017B')
+    card_path = data.get('card_path') or find_default_card_path()
     start_ts = data.get('start_ts')
     end_ts = data.get('end_ts')
     tz_offset = int(data.get('tz_offset', 0))
