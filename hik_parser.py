@@ -130,8 +130,8 @@ class HikParser:
         except Exception:
             return False
 
-    def export_range(self, start_ts, end_ts, output_path, tz_offset=3, compress=False):
-        """Extracts and merges video data for the given UTC unix timestamp range."""
+    def export_range(self, start_ts, end_ts, output_dir, file_prefix="hik_export", tz_offset=3, compress=False):
+        """Extracts video segments for the given time range and saves them individually."""
         segments = self.get_segments(tz_offset)
         
         # Find indices of segments that overlap
@@ -148,65 +148,41 @@ class HikParser:
         end_idx = min(len(segments) - 1, max_idx + 1)
         
         selected_segments = segments[start_idx : end_idx + 1]
-        temp_files = []
+        exported_files = []
         
-        try:
-            for idx, seg in enumerate(selected_segments):
-                # Temporary file for this part
-                fd, temp_mp4 = tempfile.mkstemp(suffix=".mp4")
-                os.close(fd)
-                temp_files.append(temp_mp4)
-                
-                if compress:
-                    # Transcode to 1080p width-preserving h264 with crf 23 for compression
-                    cmd = f"ffmpeg -f mpeg -i - -threads auto -vf scale=-2:1080 -c:v libx264 -crf 23 -preset fast -an {temp_mp4} -y -hide_banner"
-                else:
-                    cmd = f"ffmpeg -f mpeg -i - -threads auto -c:v copy -an {temp_mp4} -y -hide_banner"
-                    
-                process = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                
-                video_len = 65536
-                with open(seg['file_path'], "rb") as vin:
-                    vin.seek(seg['start_offset'])
-                    bytes_to_read = seg['size_bytes']
-                    read_so_far = 0
-                    try:
-                        while read_so_far < bytes_to_read:
-                            chunk = vin.read(min(video_len, bytes_to_read - read_so_far))
-                            if not chunk:
-                                break
-                            process.stdin.write(chunk)
-                            read_so_far += len(chunk)
-                        process.stdin.close()
-                    except BrokenPipeError:
-                        pass
-                process.wait()
-                
-                if process.returncode != 0 or not os.path.exists(temp_mp4) or os.path.getsize(temp_mp4) < 1000:
-                    raise RuntimeError(f"Failed to demux segment {seg['id']}")
-
-            # Merge files
-            if len(temp_files) == 1:
-                if os.path.exists(output_path):
-                    os.remove(output_path)
-                os.rename(temp_files[0], output_path)
-                temp_files = []
-            else:
-                concat_list_path = temp_mp4 + "_concat.txt"
-                with open(concat_list_path, "w") as f_concat:
-                    for tf in temp_files:
-                        f_concat.write(f"file '{tf}'\n")
-                
-                cmd_concat = f"ffmpeg -f concat -safe 0 -i {concat_list_path} -c copy {output_path} -y -hide_banner"
-                res = subprocess.run(cmd_concat, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                
-                os.remove(concat_list_path)
-                if res.returncode != 0:
-                    raise RuntimeError(f"Concat failed: {res.stderr.decode()}")
-                    
-            return os.path.exists(output_path) and os.path.getsize(output_path) > 0
+        for seg in selected_segments:
+            dt = datetime.fromtimestamp(seg['start_ts'])
+            filename = f"{file_prefix}_{dt.strftime('%Y%m%d_%H%M%S')}.mp4"
+            output_path = os.path.join(output_dir, filename)
             
-        finally:
-            for tf in temp_files:
-                if os.path.exists(tf):
-                    os.remove(tf)
+            if compress:
+                # Transcode to 1080p width-preserving h264 with crf 23 for compression
+                cmd = f"ffmpeg -f mpeg -i - -threads auto -vf scale=-2:1080 -c:v libx264 -crf 23 -preset fast -an {output_path} -y -hide_banner"
+            else:
+                cmd = f"ffmpeg -f mpeg -i - -threads auto -c:v copy -an {output_path} -y -hide_banner"
+                
+            process = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            
+            video_len = 65536
+            with open(seg['file_path'], "rb") as vin:
+                vin.seek(seg['start_offset'])
+                bytes_to_read = seg['size_bytes']
+                read_so_far = 0
+                try:
+                    while read_so_far < bytes_to_read:
+                        chunk = vin.read(min(video_len, bytes_to_read - read_so_far))
+                        if not chunk:
+                            break
+                        process.stdin.write(chunk)
+                        read_so_far += len(chunk)
+                    process.stdin.close()
+                except BrokenPipeError:
+                    pass
+            process.wait()
+            
+            if process.returncode != 0 or not os.path.exists(output_path) or os.path.getsize(output_path) < 1000:
+                raise RuntimeError(f"Failed to demux segment {seg['id']}")
+                
+            exported_files.append(filename)
+            
+        return exported_files

@@ -30,7 +30,15 @@ const dom = {
     btnRanges: document.querySelectorAll('.btn-range'),
     btnBrowse: document.getElementById('btnBrowse'),
     browseModal: document.getElementById('browseModal'),
-    compressVideo: document.getElementById('compressVideo')
+    compressVideo: document.getElementById('compressVideo'),
+    filePrefix: document.getElementById('filePrefix'),
+    exportSuccessModal: document.getElementById('exportSuccessModal'),
+    btnExitSuccess: document.getElementById('btnExitSuccess'),
+    successFilesCount: document.getElementById('successFilesCount'),
+    successDirPath: document.getElementById('successDirPath'),
+    btnCopyPath: document.getElementById('btnCopyPath'),
+    successFilesList: document.getElementById('successFilesList'),
+    btnConfirmSuccess: document.getElementById('btnConfirmSuccess')
 };
 
 // Event Listeners
@@ -76,9 +84,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
+    // Success modal events
+    const closeSuccessModal = () => dom.exportSuccessModal.classList.remove('active');
+    dom.btnExitSuccess.addEventListener('click', closeSuccessModal);
+    dom.btnConfirmSuccess.addEventListener('click', closeSuccessModal);
+    dom.btnCopyPath.addEventListener('click', () => {
+        dom.successDirPath.select();
+        document.execCommand('copy');
+        showNotification('Başarılı', 'Klasör yolu panoya kopyalandı!', 'success');
+    });
+    
     // Close modal on click outside content
     window.addEventListener('click', (e) => {
         if (e.target === dom.previewModal) closePlayer();
+        if (e.target === dom.exportSuccessModal) closeSuccessModal();
     });
 
     // Auto-scan on load to show initial card state if valid
@@ -432,24 +451,38 @@ async function exportRange() {
                 start_ts: reqStartTs,
                 end_ts: reqEndTs,
                 tz_offset: state.tzOffset,
-                compress: dom.compressVideo ? dom.compressVideo.checked : false
+                compress: dom.compressVideo ? dom.compressVideo.checked : false,
+                file_prefix: dom.filePrefix ? dom.filePrefix.value.trim() : 'hik_export'
             })
         });
         
-        updateProgress(50, 'Ham video akışı çözümleniyor...');
+        updateProgress(50, 'Videolar dönüştürülüyor ve kaydediliyor...');
         const data = await response.json();
         
         if (!response.ok) {
             throw new Error(data.error || 'Dışarı aktarma sırasında hata oluştu.');
         }
         
-        updateProgress(90, 'MP4 dosyası kaydediliyor...');
+        updateProgress(90, 'Klasör dizini güncelleniyor...');
         setTimeout(() => {
             dom.exportModal.classList.remove('active');
             
-            // Add to recent exports
-            addRecentExport(data.filename, data.output_path, data.size_mb);
-            showNotification('Başarılı', 'Video aktarımı tamamlandı! Dosya Downloads klasörüne kaydedildi.', 'success');
+            // Populate and show success modal
+            dom.successFilesCount.textContent = `${data.files_count} dosya başarıyla dışarı aktarıldı.`;
+            dom.successDirPath.value = data.exports_dir;
+            
+            dom.successFilesList.innerHTML = '';
+            data.files.forEach(file => {
+                const li = document.createElement('li');
+                li.textContent = `• ${file.filename} (${file.size_mb} MB)`;
+                dom.successFilesList.appendChild(li);
+                
+                // Add to recent list
+                addRecentExport(file.filename, '', file.size_mb);
+            });
+            
+            dom.exportSuccessModal.classList.add('active');
+            showNotification('Başarılı', 'Görüntüler başarıyla dışarı aktarıldı!', 'success');
         }, 1000);
         
     } catch (error) {

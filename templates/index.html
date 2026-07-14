@@ -119,10 +119,17 @@
                         <i class="fa-solid fa-info-circle"></i> Seçtiğiniz aralıkta herhangi bir kayıt bulunmamaktadır.
                     </div>
                     
+                    <div class="form-row" style="margin-top: 12px; margin-bottom: 12px;">
+                        <div class="input-group full-width">
+                            <label for="filePrefix"><i class="fa-solid fa-tag"></i> Dosya Önadı (Önek)</label>
+                            <input type="text" id="filePrefix" value="hik_export" placeholder="Örn: sinif_ders_" style="min-width: 100%;">
+                        </div>
+                    </div>
+
                     <div class="form-row" style="margin-top: 12px; margin-bottom: 16px;">
                         <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;">
                             <input type="checkbox" id="compressVideo" checked style="width: 18px; height: 18px; cursor: pointer;">
-                            <span><i class="fa-solid fa-compress"></i> Videoyu Sıkıştır (EBA / Hızlı Yükleme için 1080p)</span>
+                            <span><i class="fa-solid fa-compress"></i> Videoları Sıkıştır (EBA / Hızlı Yükleme için 1080p)</span>
                         </label>
                     </div>
                     
@@ -153,6 +160,32 @@
                 <div class="progress-fill"></div>
             </div>
             <span class="progress-status">İşlem yapılıyor...</span>
+        </div>
+    </div>
+
+    <!-- Export Success Modal -->
+    <div id="exportSuccessModal" class="modal-overlay">
+        <div class="modal-content glass" style="max-width: 500px;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; margin-bottom: 16px;">
+                <h3 style="margin: 0; color: #2ecc71;"><i class="fa-solid fa-circle-check"></i> Aktarma Tamamlandı</h3>
+                <button class="close-btn" id="btnExitSuccess" style="background: none; border: none; color: #fff; cursor: pointer; font-size: 18px;"><i class="fa-solid fa-times"></i></button>
+            </div>
+            <p id="successFilesCount" style="margin-bottom: 12px; font-weight: 500;">0 dosya başarıyla dışarı aktarıldı.</p>
+            
+            <div class="input-group full-width" style="margin-bottom: 16px;">
+                <label><i class="fa-solid fa-folder-open"></i> Kaydedilen Klasör Yolu</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="successDirPath" readonly style="flex: 1; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 8px; border-radius: 4px; font-family: monospace;">
+                    <button id="btnCopyPath" class="btn primary-btn"><i class="fa-solid fa-copy"></i> Kopyala</button>
+                </div>
+            </div>
+            
+            <div class="export-files-list-container" style="max-height: 150px; overflow-y: auto; background: rgba(0,0,0,0.1); border-radius: 4px; padding: 8px; margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.05);">
+                <ul id="successFilesList" style="list-style: none; padding: 0; margin: 0; font-family: monospace; font-size: 13px; text-align: left;">
+                </ul>
+            </div>
+            
+            <button id="btnConfirmSuccess" class="btn success-btn btn-large" style="width: 100%;">Tamam</button>
         </div>
     </div>
 

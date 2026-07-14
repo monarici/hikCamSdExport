@@ -145,24 +145,36 @@ def api_export():
         
     try:
         compress = data.get('compress', False)
+        file_prefix = data.get('file_prefix', 'hik_export').strip()
+        if not file_prefix:
+            file_prefix = 'hik_export'
+            
         parser = get_parser(card_path)
         
-        # Create a descriptive filename based on requested start time
-        dt = datetime.fromtimestamp(start_ts)
-        filename = f"hik_export_{dt.strftime('%Y%m%d_%H%M%S')}.mp4"
-        output_path = os.path.join(EXPORTS_DIR, filename)
+        exported_files = parser.export_range(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            output_dir=EXPORTS_DIR,
+            file_prefix=file_prefix,
+            tz_offset=tz_offset,
+            compress=compress
+        )
         
-        success = parser.export_range(start_ts, end_ts, output_path, tz_offset, compress=compress)
-        
-        if success:
+        if exported_files:
             return jsonify({
                 'success': True,
-                'output_path': output_path,
-                'filename': filename,
-                'size_mb': round(os.path.getsize(output_path) / (1024 * 1024), 2)
+                'exports_dir': EXPORTS_DIR,
+                'files': [
+                    {
+                        'filename': f,
+                        'size_mb': round(os.path.getsize(os.path.join(EXPORTS_DIR, f)) / (1024 * 1024), 2)
+                    } for f in exported_files
+                ],
+                'files_count': len(exported_files)
             })
         else:
-            return jsonify({'error': "Export failed"}), 500
+            return jsonify({'error': "Export failed or no segments extracted"}), 500
+            
             
     except Exception as e:
         return jsonify({'error': str(e)}), 500
