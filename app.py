@@ -144,7 +144,6 @@ def api_export():
         return jsonify({'error': "Missing start_ts or end_ts"}), 400
         
     try:
-        format_type = data.get('format_type', 'mpeg')
         parser = get_parser(card_path)
         
         # Create a descriptive filename based on requested start time
@@ -152,7 +151,7 @@ def api_export():
         filename = f"hik_export_{dt.strftime('%Y%m%d_%H%M%S')}.mp4"
         output_path = os.path.join(EXPORTS_DIR, filename)
         
-        success = parser.export_range(start_ts, end_ts, output_path, tz_offset, format_type)
+        success = parser.export_range(start_ts, end_ts, output_path, tz_offset)
         
         if success:
             return jsonify({
