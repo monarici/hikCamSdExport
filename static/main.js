@@ -432,7 +432,7 @@ async function exportRange() {
                 start_ts: reqStartTs,
                 end_ts: reqEndTs,
                 tz_offset: state.tzOffset,
-                format_type: dom.formatType.value
+                format_type: dom.formatType ? dom.formatType.value : 'mpeg'
             })
         });
         
