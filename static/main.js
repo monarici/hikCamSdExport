@@ -480,11 +480,11 @@ function addRecentExport(filename, fullPath, sizeMb) {
             <span>${filename}</span>
             <small>${sizeMb} MB | ${new Date().toLocaleTimeString()}</small>
         </div>
-        <div class="export-item-actions">
-            <button class="btn-icon play-btn" title="Oynat" onclick="playExportedVideo('${filename}', '${encodeURIComponent(fullPath)}')">
+         <div class="export-item-actions">
+            <button class="btn-icon play-btn" title="Oynat" onclick="playExportedVideo('${filename}')">
                 <i class="fa-solid fa-circle-play"></i>
             </button>
-            <a class="btn-icon download-btn" title="İndir" href="/api/download?path=${encodeURIComponent(fullPath)}" download>
+            <a class="btn-icon download-btn" title="İndir" href="/api/download?filename=${encodeURIComponent(filename)}" download>
                 <i class="fa-solid fa-download"></i>
             </a>
         </div>
@@ -494,12 +494,13 @@ function addRecentExport(filename, fullPath, sizeMb) {
 }
 
 // Play video inside the web player modal
-function playExportedVideo(filename, encodedPath) {
+function playExportedVideo(filename) {
+    const encodedName = encodeURIComponent(filename);
     dom.playerFilename.textContent = filename;
-    dom.playerDownloadBtn.href = `/api/download?path=${encodedPath}`;
+    dom.playerDownloadBtn.href = `/api/download?filename=${encodedName}`;
     
     // Set video src pointing to local API
-    dom.previewVideo.src = `/api/download?path=${encodedPath}`;
+    dom.previewVideo.src = `/api/download?filename=${encodedName}`;
     dom.previewModal.classList.add('active');
     dom.previewVideo.play();
 }

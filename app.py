@@ -15,6 +15,10 @@ app = Flask(__name__, template_folder=os.path.join(current_dir, 'templates'), st
 CACHE_DIR = os.path.join(current_dir, 'static', 'cache')
 os.makedirs(CACHE_DIR, exist_ok=True)
 
+# Global exports directory for exported videos
+EXPORTS_DIR = os.path.join(current_dir, 'static', 'exports')
+os.makedirs(EXPORTS_DIR, exist_ok=True)
+
 # Store global parser instances to avoid re-reading index00.bin excessively
 _parsers = {}
 
@@ -143,17 +147,10 @@ def api_export():
         format_type = data.get('format_type', 'mpeg')
         parser = get_parser(card_path)
         
-        # Determine output folder
-        downloads_dir = "/home/technopc/Downloads"
-        if not os.path.exists(downloads_dir):
-            downloads_dir = os.path.join(current_dir, 'static', 'exports')
-            
-        os.makedirs(downloads_dir, exist_ok=True)
-        
         # Create a descriptive filename based on requested start time
         dt = datetime.fromtimestamp(start_ts)
         filename = f"hik_export_{dt.strftime('%Y%m%d_%H%M%S')}.mp4"
-        output_path = os.path.join(downloads_dir, filename)
+        output_path = os.path.join(EXPORTS_DIR, filename)
         
         success = parser.export_range(start_ts, end_ts, output_path, tz_offset, format_type)
         
@@ -172,8 +169,11 @@ def api_export():
 
 @app.route('/api/download', methods=['GET'])
 def api_download():
-    file_path = request.args.get('path')
-    if not file_path or not os.path.exists(file_path):
+    filename = request.args.get('filename')
+    if not filename:
+        return jsonify({'error': "Missing filename"}), 400
+    file_path = os.path.join(EXPORTS_DIR, filename)
+    if not os.path.exists(file_path):
         return jsonify({'error': "File not found"}), 404
     return send_file(file_path, as_attachment=True)
 
