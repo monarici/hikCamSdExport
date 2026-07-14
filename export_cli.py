@@ -27,19 +27,35 @@ def parse_datetime(dt_str):
     except ValueError:
         return None
 
-def find_index_file():
+def find_default_card_path():
+    media_dirs = ['/media', '/run/media', os.path.expanduser('~')]
+    try:
+        import getpass
+        user = getpass.getuser()
+        media_dirs.insert(0, f'/media/{user}')
+        media_dirs.insert(1, f'/run/media/{user}')
+    except Exception:
+        pass
+
+    for md in media_dirs:
+        if os.path.exists(md) and os.path.isdir(md):
+            try:
+                for sub in os.listdir(md):
+                    sub_path = os.path.join(md, sub)
+                    if os.path.isdir(sub_path) and os.path.exists(os.path.join(sub_path, 'index00.bin')):
+                        return sub_path
+            except Exception:
+                pass
+                
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    index_path = os.path.join(current_dir, "index00.bin")
-    if os.path.exists(index_path):
-        return current_dir, index_path
-    
-    # Fallback to current working directory
-    cwd = os.getcwd()
-    index_path_cwd = os.path.join(cwd, "index00.bin")
-    if os.path.exists(index_path_cwd):
-        return cwd, index_path_cwd
+    if os.path.exists(os.path.join(current_dir, "index00.bin")):
+        return current_dir
         
-    return None, None
+    cwd = os.getcwd()
+    if os.path.exists(os.path.join(cwd, "index00.bin")):
+        return cwd
+        
+    return ''
 
 def get_segments(card_path, index_file, tz_offset=3):
     header_len = 1280
@@ -165,13 +181,27 @@ def copy_segment(seg, output_dir, file_prefix, has_ffmpeg):
 def main():
     print_banner()
     
-    card_path, index_file = find_index_file()
-    if not index_file:
-        print(f"{RED}[!] Hata: Bulunduğunuz dizinde 'index00.bin' dosyası bulunamadı.{RESET}")
-        print("Lütfen bu betiği SD kartın içinde veya kayıt dosyalarının olduğu dizinde çalıştırın.")
-        sys.exit(1)
+    default_card = find_default_card_path()
+    print(f"\n{BOLD}SD Kart / Kamera Medya Dizin Seçimi{RESET}")
+    if default_card:
+        print(f"{GREEN}[i] Otomatik algılanan varsayılan kart yolu: {default_card}{RESET}")
         
-    print(f"{GREEN}[i] SD Kart dizini algılandı: {card_path}{RESET}")
+    while True:
+        card_path = input(f"{CYAN}Kamera Medya Klasör Yolu (Boş geçilirse '{default_card}' seçilir):{RESET} ").strip()
+        if not card_path:
+            card_path = default_card
+            
+        if not card_path:
+            print(f"{RED}[!] Hata: Klasör yolu boş bırakılamaz.{RESET}")
+            continue
+            
+        card_path = os.path.abspath(card_path)
+        index_file = os.path.join(card_path, "index00.bin")
+        if os.path.exists(index_file):
+            break
+        print(f"{RED}[!] Hata: '{card_path}' dizininde 'index00.bin' dosyası bulunamadı.{RESET}")
+        
+    print(f"{GREEN}[✓] Dizin doğrulandı: {card_path}{RESET}")
     
     try:
         segments = get_segments(card_path, index_file)
