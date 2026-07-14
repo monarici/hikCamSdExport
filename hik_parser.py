@@ -157,8 +157,8 @@ class HikParser:
             
             nice_prefix = "nice -n 15 " if os.name != 'nt' else ""
             if compress:
-                # Transcode to 1080p width-preserving h264 with crf 23 for compression (using 2 threads and superfast preset to prevent system lag)
-                cmd = f"{nice_prefix}ffmpeg -f mpeg -i - -threads 2 -vf scale=-2:1080 -c:v libx264 -crf 23 -preset superfast -an {output_path} -y -hide_banner"
+                # Transcode to 1080p width-preserving h264 with crf 28 for compression (using 2 threads and superfast preset to prevent system lag and create smaller files)
+                cmd = f"{nice_prefix}ffmpeg -f mpeg -i - -threads 2 -vf scale=-2:1080 -c:v libx264 -crf 28 -preset superfast -an {output_path} -y -hide_banner"
             else:
                 cmd = f"{nice_prefix}ffmpeg -f mpeg -i - -threads 2 -c:v copy -an {output_path} -y -hide_banner"
                 
