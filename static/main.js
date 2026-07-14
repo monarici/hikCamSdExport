@@ -28,7 +28,8 @@ const dom = {
     notification: document.getElementById('notification'),
     segmentSearch: document.getElementById('segmentSearch'),
     btnRanges: document.querySelectorAll('.btn-range'),
-    btnBrowse: document.getElementById('btnBrowse')
+    btnBrowse: document.getElementById('btnBrowse'),
+    browseModal: document.getElementById('browseModal')
 };
 
 // Event Listeners
@@ -36,7 +37,30 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.btnScan.addEventListener('click', scanCard);
     dom.btnExport.addEventListener('click', exportRange);
     dom.btnExitPlayer.addEventListener('click', closePlayer);
-    dom.btnBrowse.addEventListener('click', browseFolder);
+    
+    // Browser modal events
+    dom.btnBrowse.addEventListener('click', () => openFolderBrowser(dom.cardPath.value.trim()));
+    document.getElementById('btnExitBrowser').addEventListener('click', () => dom.browseModal.classList.remove('active'));
+    document.getElementById('btnBrowserCancel').addEventListener('click', () => dom.browseModal.classList.remove('active'));
+    document.getElementById('btnBrowserUp').addEventListener('click', () => {
+        if (browserState.parentPath) {
+            loadDirectory(browserState.parentPath);
+        }
+    });
+    document.getElementById('btnBrowserSelect').addEventListener('click', () => {
+        dom.cardPath.value = browserState.currentPath;
+        dom.browseModal.classList.remove('active');
+        showNotification('Başarılı', 'Klasör seçildi: ' + browserState.currentPath, 'success');
+        scanCard();
+    });
+    
+    // Sidebar shortcuts
+    document.querySelectorAll('.sidebar-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            loadDirectory(e.currentTarget.dataset.path);
+        });
+    });
+
     dom.segmentSearch.addEventListener('input', filterSegmentsList);
     
     // Inputs change validation
@@ -62,32 +86,61 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Browse directory using backend OS folder selector
-async function browseFolder() {
-    dom.btnBrowse.disabled = true;
-    showNotification('Bilgi', 'Klasör seçici penceresi açıldı...', 'info');
+let browserState = {
+    currentPath: '',
+    parentPath: null
+};
+
+// Open custom web folder browser
+async function openFolderBrowser(startPath = '') {
+    dom.browseModal.classList.add('active');
+    await loadDirectory(startPath);
+}
+
+// Load directories from backend API
+async function loadDirectory(path) {
+    const listEl = document.getElementById('browserList');
+    listEl.innerHTML = '<div style="color: var(--text-muted); padding: 12px; font-size: 13px;"><i class="fa-solid fa-spinner fa-spin"></i> Yükleniyor...</div>';
+    
     try {
-        const response = await fetch('/api/browse');
+        const response = await fetch(`/api/list_dir?path=${encodeURIComponent(path)}`);
         const data = await response.json();
         
         if (!response.ok) {
-            throw new Error(data.error || 'Klasör seçilemedi.');
+            throw new Error(data.error || 'Dizin yüklenemedi.');
         }
         
-        if (data.path) {
-            dom.cardPath.value = data.path;
-            showNotification('Başarılı', 'Klasör seçildi: ' + data.path, 'success');
-            scanCard();
+        browserState.currentPath = data.current_path;
+        browserState.parentPath = data.parent_path;
+        
+        document.getElementById('browserPathInput').value = data.current_path;
+        listEl.innerHTML = '';
+        
+        if (data.directories.length === 0) {
+            listEl.innerHTML = '<div style="color: var(--text-muted); padding: 12px; font-size: 13px;">Bu dizinde alt klasör bulunmuyor.</div>';
         } else {
-            showNotification('Bilgi', 'Klasör seçimi iptal edildi.', 'info');
+            data.directories.forEach(dir => {
+                const item = document.createElement('div');
+                item.className = 'browser-folder-item';
+                item.innerHTML = `<i class="fa-solid fa-folder"></i> <span>${dir}</span>`;
+                item.addEventListener('click', () => {
+                    const separator = browserState.currentPath.endsWith('/') ? '' : '/';
+                    const nextPath = browserState.currentPath + separator + dir;
+                    loadDirectory(nextPath);
+                });
+                listEl.appendChild(item);
+            });
         }
-    } catch (error) {
-        showNotification('Hata', error.message, 'error');
-        console.error(error);
-    } finally {
-        dom.btnBrowse.disabled = false;
+        
+        // Enable/disable parent navigation button
+        document.getElementById('btnBrowserUp').disabled = !browserState.parentPath;
+        
+    } catch (err) {
+        showNotification('Hata', err.message, 'error');
+        listEl.innerHTML = `<div style="color: var(--accent-red); padding: 12px; font-size: 13px;"><i class="fa-solid fa-triangle-exclamation"></i> Hata: ${err.message}</div>`;
     }
 }
+
 
 // Scan SD Card index
 async function scanCard() {

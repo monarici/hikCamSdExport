@@ -10,6 +10,7 @@ venv/
 *.mp4
 *.jpg
 *.h264
+*.png
 *.metadata.json
 walkthrough.md
 implementation_plan.md

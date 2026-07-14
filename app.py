@@ -27,30 +27,47 @@ def get_parser(card_path):
 def index():
     return render_template('index.html')
 
-@app.route('/api/browse', methods=['GET'])
-def api_browse():
-    import subprocess
+@app.route('/api/list_dir', methods=['GET'])
+def api_list_dir():
+    path = request.args.get('path', '')
+    
+    if not path:
+        # Default starting directory on Linux
+        for p in ['/media/technopc', '/media', os.path.expanduser('~'), '/']:
+            if os.path.exists(p) and os.path.isdir(p):
+                path = p
+                break
+                
     try:
-        # Run folder picker in a separate python process to ensure GUI main-thread safety
-        script = "import tkinter as tk; from tkinter import filedialog; r=tk.Tk(); r.withdraw(); r.attributes('-topmost', True); print(filedialog.askdirectory(title='Hikvision SD Kart Klasörünü Seçin'))"
-        res = subprocess.run([sys.executable, '-c', script], capture_output=True, text=True, timeout=120)
+        path = os.path.abspath(path)
+        if not os.path.exists(path):
+            return jsonify({'error': 'Dizin bulunamadı.'}), 400
+        if not os.path.isdir(path):
+            return jsonify({'error': 'Belirtilen yol klasör değil.'}), 400
+            
+        directories = []
+        try:
+            for item in os.listdir(path):
+                # Filter hidden files and system trash
+                if item.startswith('.') or item == 'System Volume Information':
+                    continue
+                full_path = os.path.join(path, item)
+                if os.path.isdir(full_path):
+                    directories.append(item)
+        except PermissionError:
+            return jsonify({'error': 'Erişim engellendi.'}), 403
+            
+        directories.sort(key=str.lower)
         
-        if res.returncode == 0:
-            selected_path = res.stdout.strip()
-            if selected_path:
-                return jsonify({'path': selected_path})
-            else:
-                return jsonify({'path': None})
-        else:
-            stderr = res.stderr.strip()
-            error_msg = "Klasör seçici penceresi açılamadı."
-            if "No module named '_tkinter'" in stderr or "ModuleNotFoundError" in stderr:
-                error_msg = "Sisteminizde Python GUI (Tkinter) modülü kurulu değil. Lütfen terminalde 'sudo apt install python3-tk' çalıştırıp sunucuyu yeniden başlatın."
-            elif "couldn't connect to display" in stderr or "DISPLAY" in stderr:
-                error_msg = "Grafik ekran (X11/Wayland DISPLAY) bağlantısı kurulamadı. SSH ortamında gözat çalışmaz, lütfen yolu manuel girin."
-            else:
-                error_msg += f" Detay: {stderr}"
-            return jsonify({'error': error_msg}), 500
+        parent = os.path.dirname(path)
+        if parent == path:
+            parent = None
+            
+        return jsonify({
+            'current_path': path,
+            'parent_path': parent,
+            'directories': directories
+        })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

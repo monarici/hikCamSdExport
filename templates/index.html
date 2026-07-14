@@ -175,6 +175,38 @@
         </div>
     </div>
 
+    <!-- Folder Browse Modal -->
+    <div id="browseModal" class="modal-overlay">
+        <div class="modal-content glass file-browser-modal">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-folder-open"></i> Klasör Gözat</h3>
+                <button id="btnExitBrowser" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="browser-path-bar">
+                    <button id="btnBrowserUp" class="btn icon-btn" title="Üst Dizine Git"><i class="fa-solid fa-arrow-up"></i></button>
+                    <input type="text" id="browserPathInput" readonly>
+                </div>
+                
+                <div class="browser-layout">
+                    <div class="browser-sidebar">
+                        <button class="sidebar-item" data-path="/media/technopc"><i class="fa-solid fa-sd-card"></i> Medya</button>
+                        <button class="sidebar-item" data-path="/"><i class="fa-solid fa-hard-drive"></i> Kök Dizin</button>
+                    </div>
+                    <div class="browser-list-container">
+                        <div id="browserList" class="browser-list">
+                            <!-- Folders populated via JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="btnBrowserCancel" class="btn secondary-btn">İptal</button>
+                <button id="btnBrowserSelect" class="btn primary-btn">Bu Dizini Seç</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Frontend Script -->
     <script src="/static/main.js"></script>
 </body>
