@@ -140,11 +140,10 @@ def api_export():
         return jsonify({'error': "Missing start_ts or end_ts"}), 400
         
     try:
+        format_type = data.get('format_type', 'mpeg')
         parser = get_parser(card_path)
         
         # Determine output folder
-        # We save directly to the Downloads directory of user for convenience,
-        # or in our local scratch area as a fallback.
         downloads_dir = "/home/technopc/Downloads"
         if not os.path.exists(downloads_dir):
             downloads_dir = os.path.join(current_dir, 'static', 'exports')
@@ -156,7 +155,7 @@ def api_export():
         filename = f"hik_export_{dt.strftime('%Y%m%d_%H%M%S')}.mp4"
         output_path = os.path.join(downloads_dir, filename)
         
-        success = parser.export_range(start_ts, end_ts, output_path, tz_offset)
+        success = parser.export_range(start_ts, end_ts, output_path, tz_offset, format_type)
         
         if success:
             return jsonify({
