@@ -203,19 +203,7 @@ def main():
         
     print(f"{GREEN}[✓] Dizin doğrulandı: {card_path}{RESET}")
     
-    # Get timezone offset
-    print(f"\n{BOLD}Kamera Saat Farkı Ayarı{RESET}")
-    while True:
-        tz_str = input(f"{CYAN}Saat Farkı (Varsayılan: 0):{RESET} ").strip()
-        if not tz_str:
-            tz_offset = 0
-            break
-        try:
-            tz_offset = int(tz_str)
-            break
-        except ValueError:
-            print(f"{RED}[!] Geçersiz sayı. Lütfen tam sayı girin (Örn: 0 veya 3).{RESET}")
-            
+    tz_offset = 0
     try:
         segments = get_segments(card_path, index_file, tz_offset)
         print(f"{GREEN}[i] Toplam {len(segments)} adet video segmenti başarıyla dizinlendi.{RESET}")
