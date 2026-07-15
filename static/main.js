@@ -450,7 +450,7 @@ async function exportRange() {
                 start_ts: reqStartTs,
                 end_ts: reqEndTs,
                 tz_offset: state.tzOffset,
-                compress: true,
+                compress: false,
                 file_prefix: dom.filePrefix ? dom.filePrefix.value.trim() : 'hik_export'
             })
         });
