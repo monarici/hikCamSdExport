@@ -1,6 +1,6 @@
 # HikExporter - Hikvision SD Kart Video Aktarıcı ve Kurtarıcı
 
-HikExporter, Hikvision IP kameralarının SD kartlarında kullandığı tescilli depolama yapısını çözümleyerek, istediğiniz tarih ve saat aralığındaki video kayıtlarını kayıpsız ve çok hızlı bir şekilde kurtarmanızı ve standart oynatılabilir `.mp4` formatında dışa aktarmanızı sağlayan modern, web tabanlı bir yerel uygulamadır.
+HikExporter, Hikvision IP kameralarının SD kartlarında kullandığı tescilli depolama yapısını çözümleyerek, istediğiniz tarih ve saat aralığındaki video kayıtlarını kayıpsız, sıkıştırmasız ve kopyalama hızında (.mp4 formatında) dışa aktarmanızı sağlayan modern, yerel bir uygulamadır.
 
 ---
 
@@ -18,12 +18,12 @@ Bu kartlar bilgisayara takıldığında:
 
 ## ✨ Özellikler
 
-* **Hızlı Tarama & Analiz**: SD karttaki tüm kayıt dilimlerini (segmentlerini) kronolojik olarak listeler.
-* **Görsel Zaman Çizelgesi (Timeline)**: Kaydedilmiş görüntülerin gün içindeki dağılımını grafiksel bir cetvel üzerinde gösterir.
-* **Akışlı Kesim (Piping - 0.2 Saniye)**: Devasa 256MB'lık dosyaları diske yazıp okumak yerine, doğrudan Python üzerinden `ffmpeg` stdin'ine borulama yapar. Bu sayede 1 dakikalık bir videoyu dışa aktarmak **0.2 saniyeden kısa sürer**.
-* **Önizleme Resimleri (Thumbnails)**: Her kayıt diliminin ilk karesini otomatik olarak ayrıştırarak arayüzde önizleme resmi olarak gösterir.
-* **Saat Dilimi Desteği**: Kamera yerel saati ile UTC arasındaki farkları otomatik yönetir.
-* **Dahili Medya Oynatıcı**: Kurtarılan videoları doğrudan web arayüzündeki oynatıcıdan izleyebilir ve ardından bilgisayarınıza indirebilirsiniz.
+* **Otomatik Kart Algılama**: Sistem `/media`, `/run/media` gibi dizinleri tarayarak bağlı olan Hikvision SD kartını otomatik olarak algılar ve varsayılan yol olarak seçer.
+* **Hızlı Dışarı Aktarma (Kayıpsız Paketleme)**: Videoları yeniden kodlamak (transcoding) yerine doğrudan paket kopyalama (stream copy) yöntemiyle standart MP4 kabuğuna sarar. Bu sayede aktarım işlemi **saniyeler içinde, kopyalama hızında** biter ve CPU'yu yormaz.
+* **Dilimli Kayıt Yapısı**: Seçilen geniş zaman aralıklarını birleştirmek yerine doğrudan kameranın 256MB'lık doğal sınırlarında tek tek MP4 dosyaları olarak dışarı aktarır. Böylece dosyalar sunucu yükleme sınırlarına (256MB) mükemmel uyum sağlar.
+* **Klasör Kopyalama Arayüzü**: Aktarım bittiğinde üretilen dosyaları listeler ve hedef klasör yolunu tek tıkla panoya kopyalamanızı sağlayan kullanıcı dostu bir arayüz sunar.
+* **Önizleme Resimleri (Thumbnails)**: Her kayıt diliminin ilk karesini arka planda işlemciyi yormayacak şekilde tek tek (sıralı kilit mekanizmasıyla) oluşturarak arayüzde gösterir.
+* **CLI (Komut Satırı) Desteği**: Arayüz kullanmak istemeyenler için bağımsız, sorusuz çalışan `export_cli.py` betiği içerir.
 
 ---
 
@@ -35,7 +35,8 @@ Programın çalışabilmesi için bilgisayarınızda **Python 3** ve **FFmpeg** 
 1. **Python Kurulumu**: [Python.org](https://www.python.org/downloads/) adresinden en son Python sürümünü indirin. Yükleyiciyi çalıştırırken alttaki **"Add Python to PATH"** (Python'ı PATH'e ekle) seçeneğini **mutlaka işaretleyin**.
 2. **FFmpeg Kurulumu**: 
    * [FFmpeg indirme sayfasından](https://ffmpeg.org/download.html) Windows build'ini indirin ve zip dosyasını çıkarın.
-   * `bin` klasörünün içindeki `ffmpeg.exe` ve `ffprobe.exe` dosyalarını projenin ana dizinine (program dosyalarının yanına) kopyalayın VEYA FFmpeg yolunu sistem ortam değişkenlerindeki (PATH) değerlere ekleyin.
+   * `bin` klasörünün içindeki `ffmpeg.exe` ve `ffprobe.exe` dosyalarını projenin ana dizinine (program dosyalarının yanındaki `app.py`nin yanına) kopyalayın.
+   * **ÖNEMLİ**: FFmpeg dosyalarını kopyaladıktan sonra, sistemin bu dosyaları görebilmesi için **kullandığınız terminali (CMD/PowerShell), kod editörünü (VS Code vb.) kapatıp açın veya bilgisayarı yeniden başlatın**.
 3. **Kütüphane Kurulumu**: Komut İstemi'ni (CMD) açın ve şu komutu çalıştırın:
    ```cmd
    pip install flask
@@ -51,7 +52,7 @@ Programın çalışabilmesi için bilgisayarınızda **Python 3** ve **FFmpeg** 
    sudo apt update
    sudo apt install python3 python3-pip ffmpeg -y
    ```
-2. Flask kütüphanesini kurun (Modern Linux dağıtımları için `--break-system-packages` parametresi gerekebilir):
+2. Flask kütüphanesini kurun:
    ```bash
    pip3 install flask --break-system-packages
    ```
@@ -60,32 +61,27 @@ Programın çalışabilmesi için bilgisayarınızda **Python 3** ve **FFmpeg** 
    python3 app.py
    ```
 
-### 3. macOS Kurulumu
-1. **Homebrew** kullanarak Python ve FFmpeg yükleyin (Eğer Brew kurulu değilse önce terminalden kurun):
-   ```bash
-   brew install python ffmpeg
-   ```
-2. Flask kütüphanesini yükleyin:
-   ```bash
-   pip3 install flask
-   ```
-3. Proje dizininde terminalden uygulamayı çalıştırın:
-   ```bash
-   python3 app.py
-   ```
-
 ---
 
-## 🚀 Nasıl Kullanılır?
+## 🚀 Çalıştırma Yöntemleri
 
+### Yöntem A: Web Arayüzü (Önerilen)
 1. Uygulamayı başlattıktan sonra tarayıcınızda şu adresi açın:
    [http://127.0.0.1:5000/](http://127.0.0.1:5000/)
-2. **Kart Yolu** kısmına SD kartınızın bağlı olduğu sürücü harfini veya bağlama noktasını girin:
-   * **Windows**: `E:\` veya `F:\` gibi.
-   * **Linux**: `/media/kullanici_adi/sürücü_adi` gibi.
-   * **macOS**: `/Volumes/sürücü_adi` gibi.
-3. **Zaman Dilimi** kısmını varsayılan olan `0 (Kamera Saat Dilimi)` ayarında bırakın (Hikvision kamera indeksleri doğrudan yerel saati yazar).
-4. **Tarat** butonuna basın. Kayıtlar sol tarafa yüklenecek ve zaman çizelgesi çizilecektir.
-5. Bir kayıt diliminin üstündeki **Seç** butonuna basarak tarih aralığını otomatik doldurun VEYA sağ panelden kurtarmak istediğiniz özel başlangıç ve bitiş saatlerini girin.
-6. **Videoyu Dışarı Aktar (MP4)** butonuna basın.
-7. İşlem tamamlandığında video bilgisayarınızın **Downloads (İndirilenler)** klasörüne kaydedilecek ve arayüzdeki "Son Dışarı Aktarılanlar" listesine eklenecektir. Buradaki **Oynat** butonuna basarak tarayıcı içinden videoyu doğrudan izleyebilirsiniz.
+2. Kart takılıysa otomatik olarak algılanacaktır. Tarat butonuna basın.
+3. Kurtarmak istediğiniz zaman aralığını seçin, bir dosya öneki girin ve **Videoyu Dışarı Aktar** butonuna tıklayın.
+4. Tamamlandığında açılan pencerede hedef klasör yolunu tek tuşla kopyalayabilir ve dosyaları görebilirsiniz.
+
+### Yöntem B: Komut Satırı Betiği (`export_cli.py`)
+Arayüz ve tarayıcı kullanmadan doğrudan terminal üzerinden en yüksek hızda video kopyalamak istiyorsanız:
+1. Terminalde proje klasöründeyken şu komutu çalıştırın:
+   ```bash
+   python3 export_cli.py
+   ```
+2. Betik sırasıyla şunları soracaktır:
+   * **Kamera Medya Klasör Yolu**: Boş bırakırsanız takılı SD kartı otomatik tespit edip seçer.
+   * **Başlangıç Tarih ve Saati**: `YYYY-MM-DD HH:MM:SS` formatında (Örn: `2026-06-13 07:00:00`)
+   * **Bitiş Tarih ve Saati**: `YYYY-MM-DD HH:MM:SS` formatında (Örn: `2026-06-13 15:00:00`)
+   * **Hedef Klasör Yolu**: Dosyaların kaydedileceği konum.
+   * **Dosya Önadı (Önek)**: Dosya isimlerinin başına gelecek kelime.
+3. Betik saniyeler içinde paralel olarak tüm ilgili segmentleri kopyalayacaktır.
